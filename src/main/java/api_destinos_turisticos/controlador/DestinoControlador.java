@@ -2,139 +2,107 @@ package api_destinos_turisticos.controlador;
 
 import api_destinos_turisticos.dto.DestinoSolicitud;
 import api_destinos_turisticos.modelo.Destino;
+import api_destinos_turisticos.repositorio.DestinoRepositorio;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/destinos")
 public class DestinoControlador {
 
-    private final List<Destino> destinos = new ArrayList<>();
+    private final DestinoRepositorio destinoRepositorio;
 
-    private Long siguienteId = 9L;
-
-    public DestinoControlador() {
-
-        destinos.add(new Destino(
-                1L,
-                "Osaka",
-                "Japón",
-                "Ciudad conocida por su gastronomía, vida nocturna y ambiente urbano.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                2L,
-                "Tokio",
-                "Japón",
-                "Gran ciudad japonesa caracterizada por su tecnología, cultura y diversidad.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                3L,
-                "Bali",
-                "Indonesia",
-                "Destino conocido por sus playas, templos, paisajes naturales y cultura.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                4L,
-                "Bangkok",
-                "Tailandia",
-                "Capital de Tailandia reconocida por sus templos, mercados y gastronomía.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                5L,
-                "Hanoi",
-                "Vietnam",
-                "Capital de Vietnam con una combinación de historia, arquitectura y gastronomía.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                6L,
-                "Sapa",
-                "Vietnam",
-                "Destino montañoso conocido por sus paisajes, arrozales y comunidades locales.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                7L,
-                "Ninh Binh",
-                "Vietnam",
-                "Región conocida por sus paisajes de montañas, ríos y formaciones naturales.",
-                true
-        ));
-
-        destinos.add(new Destino(
-                8L,
-                "Estambul",
-                "Turquía",
-                "Ciudad ubicada entre Europa y Asia, reconocida por su historia y patrimonio cultural.",
-                true
-        ));
+    public DestinoControlador(DestinoRepositorio destinoRepositorio) {
+        this.destinoRepositorio = destinoRepositorio;
     }
 
+    // GET: consultamos todos los destinos guardados
     @GetMapping
     public ResponseEntity<List<Destino>> obtenerDestinos() {
+
+        List<Destino> destinos = destinoRepositorio.findAll();
+
         return ResponseEntity.ok(destinos);
     }
 
+    // GET con PathVariable: consultamos algun destino por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Destino> obtenerDestinoPorId(@PathVariable Long id) {
+    public ResponseEntity<Destino> obtenerDestinoPorId(
+            @PathVariable Long id) {
 
-        for (Destino destino : destinos) {
-
-            if (destino.getId().equals(id)) {
-                return ResponseEntity.ok(destino);
-            }
-        }
-
-        return ResponseEntity.notFound().build();
+        return destinoRepositorio.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // GET con RequestParam: buscamos los destinos por país
     @GetMapping("/buscar")
     public ResponseEntity<List<Destino>> buscarPorPais(
             @RequestParam String pais) {
 
-        List<Destino> resultados = new ArrayList<>();
-
-        for (Destino destino : destinos) {
-
-            if (destino.getPais().equalsIgnoreCase(pais)) {
-                resultados.add(destino);
-            }
-        }
+        List<Destino> resultados =
+                destinoRepositorio.findByPaisIgnoreCase(pais);
 
         return ResponseEntity.ok(resultados);
     }
 
+    // POST: Para crear un nuevo destino
     @PostMapping
     public ResponseEntity<Destino> crearDestino(
             @RequestBody DestinoSolicitud solicitud) {
 
         Destino nuevoDestino = new Destino(
-                siguienteId,
+                null,
                 solicitud.ciudad(),
                 solicitud.pais(),
                 solicitud.descripcion(),
                 solicitud.visitado()
         );
 
-        destinos.add(nuevoDestino);
-
-        siguienteId++;
+        Destino destinoGuardado =
+                destinoRepositorio.save(nuevoDestino);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(nuevoDestino);
+                .body(destinoGuardado);
+    }
+
+    // PUT: Se usa para actualizar un destino existente
+    @PutMapping("/{id}")
+    public ResponseEntity<Destino> actualizarDestino(
+            @PathVariable Long id,
+            @RequestBody DestinoSolicitud solicitud) {
+
+        return destinoRepositorio.findById(id)
+                .map(destino -> {
+
+                    destino.setCiudad(solicitud.ciudad());
+                    destino.setPais(solicitud.pais());
+                    destino.setDescripcion(solicitud.descripcion());
+                    destino.setVisitado(solicitud.visitado());
+
+                    Destino destinoActualizado =
+                            destinoRepositorio.save(destino);
+
+                    return ResponseEntity.ok(destinoActualizado);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // DELETE: elimina un destino por id
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarDestino(
+            @PathVariable Long id) {
+
+        if (!destinoRepositorio.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        destinoRepositorio.deleteById(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
