@@ -1,490 +1,228 @@
 # API de Destinos Turísticos
 
-## Descripción
-
-API REST desarrollada con Java y Spring Boot para gestionar información sobre destinos turísticos.
-
-El proyecto permite realizar operaciones CRUD (crear, consultar, actualizar y eliminar) sobre destinos turísticos, utilizando persistencia de datos mediante JPA, Hibernate y una base de datos H2.
-
-La API también incluye una consulta personalizada que permite buscar destinos por país.
-
-Este proyecto corresponde a la actividad de la asignatura **Lenguajes de Programación 3**, en la cual se aplican conceptos de desarrollo de APIs REST y persistencia de datos.
-
-## Contexto
-
-El contexto seleccionado para el desarrollo de la API son los **viajes y destinos turísticos**.
-
-Los destinos utilizados en las pruebas corresponden a lugares turísticos de diferentes países, algunos de ellos visitados durante viajes internacionales.
-
-La información gestionada por la API corresponde a:
-
-- Ciudad o destino.
-- País.
-- Descripción.
-- Estado de visita.
+API REST desarrollada con Java y Spring Boot para gestionar destinos turísticos. El proyecto permite realizar operaciones CRUD sobre destinos, relacionarlos con países, consultar destinos por país y consumir un servicio externo de tasas de cambio.
 
 ## Tecnologías utilizadas
 
-- Java
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- Hibernate
-- H2 Database
-- Maven
-- Visual Studio Code
-- Bruno
-- GitHub
+* Java 26
+* Spring Boot 4.1.1
+* Spring Web
+* Spring Data JPA
+* Hibernate
+* MySQL
+* Maven
+* RestClient
+* Spring Boot Actuator
+* Micrometer
+* Prometheus
+* Bruno para pruebas de API
 
-## Persistencia de datos
+## Funcionalidades
 
-La aplicación utiliza **JPA e Hibernate** para gestionar la persistencia de la información.
+### Gestión de destinos
 
-La entidad principal del proyecto es `Destino`, la cual está representada mediante una entidad JPA utilizando las anotaciones correspondientes.
+La API permite:
 
-La información se almacena en una base de datos **H2** configurada para persistir los datos en archivos locales.
+* Consultar todos los destinos.
+* Consultar un destino por ID.
+* Crear destinos.
+* Actualizar destinos.
+* Eliminar destinos.
+* Buscar destinos por nombre de país.
 
-La configuración utilizada permite conservar los registros incluso después de detener y volver a ejecutar la aplicación.
+### Relación entre destinos y países
 
-## Estructura del proyecto
+Cada destino está asociado con un país mediante una relación `ManyToOne`.
 
-```text
-destinos-turisticos
-│
-├── .mvn
-│   └── wrapper
-│
-├── src
-│   ├── main
-│   │   ├── java
-│   │   │   └── api_destinos_turisticos
-│   │   │       ├── controlador
-│   │   │       │   └── DestinoControlador.java
-│   │   │       │
-│   │   │       ├── dto
-│   │   │       │   └── DestinoSolicitud.java
-│   │   │       │
-│   │   │       ├── modelo
-│   │   │       │   └── Destino.java
-│   │   │       │
-│   │   │       ├── repositorio
-│   │   │       │   └── DestinoRepositorio.java
-│   │   │       │
-│   │   │       └── DestinosTuristicosApplication.java
-│   │   │
-│   │   └── resources
-│   │       └── application.properties
-│   │
-│   └── test
-│
-├── .gitignore
-├── mvnw
-├── mvnw.cmd
-├── pom.xml
-└── README.md
-```
-
-## Entidad Destino
-
-La entidad `Destino` representa los destinos turísticos almacenados en la base de datos.
-
-Sus atributos son:
-
-| Atributo | Tipo | Descripción |
-|---|---|---|
-| id | Long | Identificador único del destino |
-| ciudad | String | Ciudad o destino turístico |
-| pais | String | País donde se encuentra el destino |
-| descripcion | String | Descripción general del destino |
-| visitado | boolean | Indica si el destino ha sido visitado |
-
-La entidad utiliza las anotaciones JPA necesarias para permitir su persistencia.
-
-El identificador se genera automáticamente mediante:
-
-```java
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-```
-
-## Repositorio
-
-El proyecto utiliza un repositorio basado en `JpaRepository`:
-
-```java
-public interface DestinoRepositorio extends JpaRepository<Destino, Long> {
-
-    List<Destino> findByPaisIgnoreCase(String pais);
-
-}
-```
-
-Al extender `JpaRepository`, el repositorio dispone de las operaciones necesarias para realizar las operaciones CRUD sobre la entidad `Destino`.
-
-Entre las operaciones utilizadas se encuentran:
-
-- `findAll()`
-- `findById()`
-- `save()`
-- `existsById()`
-- `deleteById()`
-
-Además, se implementó una consulta personalizada mediante:
-
-```java
-findByPaisIgnoreCase(String pais)
-```
-
-Esta consulta permite buscar destinos por país.
-
-## Operaciones CRUD y endpoints
-
-La API utiliza como ruta base:
+La estructura principal es:
 
 ```text
-http://localhost:8080/api/destinos
+Pais
+  │
+  └── 1:N ── Destino
 ```
 
-### 1. Crear un destino
+La tabla `destino` utiliza la columna `pais_id` como clave foránea hacia la tabla `pais`.
 
-**Método HTTP:**
+### Persistencia
+
+La información se almacena en una base de datos MySQL llamada:
 
 ```text
-POST
+destinos_turisticos
 ```
 
-**Endpoint:**
+Hibernate/JPA se encarga de la persistencia de las entidades.
 
-```text
-/api/destinos
-```
+## Endpoints principales
 
-**Ejemplo de solicitud:**
+### Destinos
+
+| Método | Endpoint                           | Descripción                |
+| ------ | ---------------------------------- | -------------------------- |
+| GET    | `/api/destinos`                    | Obtener todos los destinos |
+| GET    | `/api/destinos/{id}`               | Obtener un destino por ID  |
+| GET    | `/api/destinos/buscar?pais={pais}` | Buscar destinos por país   |
+| POST   | `/api/destinos`                    | Crear un destino           |
+| PUT    | `/api/destinos/{id}`               | Actualizar un destino      |
+| DELETE | `/api/destinos/{id}`               | Eliminar un destino        |
+
+### Ejemplo para crear un destino
 
 ```json
 {
-    "ciudad": "Kioto",
-    "pais": "Japón",
-    "descripcion": "Ciudad conocida por sus templos, jardines y cultura tradicional.",
-    "visitado": false
+  "ciudad": "Medellín",
+  "paisId": 2,
+  "descripcion": "Ciudad de la eterna primavera",
+  "visitado": false
 }
 ```
 
-La información recibida mediante `@RequestBody` es representada utilizando el DTO `DestinoSolicitud`.
+## API externa de tasas de cambio
 
-**Respuesta exitosa:**
+El proyecto consume la API externa de **Frankfurter** utilizando `RestClient`.
 
-```text
-201 Created
-```
-
-**Ejemplo de respuesta:**
-
-```json
-{
-    "id": 1,
-    "ciudad": "Kioto",
-    "pais": "Japón",
-    "descripcion": "Ciudad conocida por sus templos, jardines y cultura tradicional.",
-    "visitado": false
-}
-```
-
-### 2. Consultar todos los destinos
-
-**Método HTTP:**
+Endpoint interno:
 
 ```text
-GET
+GET /api/tasas?base=USD&quote=COP
 ```
 
-**Endpoint:**
+Ejemplo:
 
 ```text
-/api/destinos
+GET http://localhost:8080/api/tasas?base=USD&quote=COP
 ```
 
-**Ejemplo:**
+La respuesta contiene:
+
+* Fecha de la tasa.
+* Moneda base.
+* Moneda de destino.
+* Tasa de cambio.
+
+También se implementó manejo de errores para controlar problemas al consultar el servicio externo.
+
+## Observabilidad
+
+El proyecto utiliza Spring Boot Actuator para monitorear el estado de la aplicación.
+
+### Health
 
 ```text
-http://localhost:8080/api/destinos
+GET /actuator/health
 ```
 
-Este endpoint consulta todos los destinos almacenados en la base de datos.
+Permite verificar el estado de la aplicación y de la conexión con MySQL.
 
-**Respuesta exitosa:**
+### Métricas
 
 ```text
-200 OK
+GET /actuator/metrics
 ```
 
-### 3. Consultar un destino por identificador
+Permite consultar las métricas disponibles de la aplicación.
 
-**Método HTTP:**
+### Métrica propia
+
+Se creó la métrica:
 
 ```text
-GET
+tasas.consultadas
 ```
 
-**Endpoint:**
+Esta registra la cantidad de consultas realizadas al servicio de tasas de cambio.
+
+Puede consultarse mediante:
 
 ```text
-/api/destinos/{id}
+GET /actuator/metrics/tasas.consultadas
 ```
 
-**Ejemplo:**
+### Prometheus
+
+Las métricas están disponibles para Prometheus mediante:
 
 ```text
-http://localhost:8080/api/destinos/1
+GET /actuator/prometheus
 ```
 
-El endpoint utiliza `@PathVariable` para recibir el identificador del destino.
+### Logs
 
-**Respuesta cuando el destino existe:**
+La aplicación utiliza el sistema de logging de Spring Boot para registrar eventos importantes. Por ejemplo, las consultas realizadas al servicio de tasas de cambio.
+
+## Estructura principal del proyecto
 
 ```text
-200 OK
-```
-
-**Respuesta cuando el destino no existe:**
-
-```text
-404 Not Found
-```
-
-### 4. Actualizar un destino
-
-**Método HTTP:**
-
-```text
-PUT
-```
-
-**Endpoint:**
-
-```text
-/api/destinos/{id}
-```
-
-**Ejemplo:**
-
-```text
-http://localhost:8080/api/destinos/1
-```
-
-**Ejemplo de solicitud:**
-
-```json
-{
-    "ciudad": "Osaka",
-    "pais": "Japón",
-    "descripcion": "Ciudad japonesa reconocida por su gastronomía, vida nocturna y lugares de interés.",
-    "visitado": true
-}
-```
-
-El identificador se recibe mediante `@PathVariable` y los nuevos datos mediante `@RequestBody`.
-
-**Respuesta cuando el destino se actualiza correctamente:**
-
-```text
-200 OK
-```
-
-Si el identificador no existe:
-
-```text
-404 Not Found
-```
-
-### 5. Eliminar un destino
-
-**Método HTTP:**
-
-```text
-DELETE
-```
-
-**Endpoint:**
-
-```text
-/api/destinos/{id}
-```
-
-**Ejemplo:**
-
-```text
-http://localhost:8080/api/destinos/1
-```
-
-Si el destino existe, se elimina de la base de datos.
-
-**Respuesta exitosa:**
-
-```text
-204 No Content
-```
-
-Si el identificador no existe:
-
-```text
-404 Not Found
-```
-
-## Consulta personalizada
-
-Además de las operaciones CRUD, la API incluye una consulta personalizada para buscar destinos por país.
-
-**Método HTTP:**
-
-```text
-GET
-```
-
-**Endpoint:**
-
-```text
-/api/destinos/buscar?pais={pais}
-```
-
-**Ejemplo:**
-
-```text
-http://localhost:8080/api/destinos/buscar?pais=Vietnam
-```
-
-La consulta utiliza el método:
-
-```java
-findByPaisIgnoreCase(String pais)
-```
-
-Esto permite realizar la búsqueda sin diferenciar entre mayúsculas y minúsculas.
-
-**Respuesta exitosa:**
-
-```text
-200 OK
-```
-
-## DTO
-
-El proyecto utiliza un `record` como DTO para representar la información recibida al crear o actualizar un destino.
-
-El DTO utilizado es `DestinoSolicitud`:
-
-```java
-public record DestinoSolicitud(
-        String ciudad,
-        String pais,
-        String descripcion,
-        boolean visitado
-) {
-}
-```
-
-El DTO permite separar los datos recibidos desde las solicitudes HTTP de la entidad persistente `Destino`.
-
-## Respuestas HTTP
-
-La API utiliza `ResponseEntity` para devolver códigos HTTP coherentes con las operaciones realizadas.
-
-Los principales códigos utilizados son:
-
-| Código | Significado | Uso en la API |
-|---|---|---|
-| 200 OK | Solicitud procesada correctamente | Consultas y actualización |
-| 201 Created | Recurso creado correctamente | Creación de un destino |
-| 204 No Content | Operación realizada sin contenido de respuesta | Eliminación de un destino |
-| 404 Not Found | Recurso no encontrado | ID inexistente |
-
-## Configuración de H2
-
-La base de datos H2 se configura mediante el archivo:
-
-```text
-src/main/resources/application.properties
-```
-
-La aplicación utiliza una base de datos H2 almacenada localmente mediante:
-
-```text
-jdbc:h2:file:./data/destinosdb
-```
-
-Esta configuración permite conservar los datos entre diferentes ejecuciones de la aplicación.
-
-La consola de H2 también se encuentra habilitada en:
-
-```text
-http://localhost:8080/h2-console
+src/
+└── main/
+    ├── java/
+    │   └── api_destinos_turisticos/
+    │       ├── config/
+    │       ├── controlador/
+    │       ├── dto/
+    │       ├── modelo/
+    │       ├── repositorio/
+    │       └── servicio/
+    │
+    └── resources/
+        └── application.properties
 ```
 
 ## Ejecución del proyecto
 
-### Requisitos
+Para ejecutar la aplicación utilizando Maven Wrapper:
 
-Para ejecutar el proyecto se necesita:
-
-- Java instalado.
-- Visual Studio Code u otro entorno de desarrollo.
-- Una terminal.
-
-El proyecto incluye Maven Wrapper, por lo que no es necesario instalar Maven de forma independiente.
-
-### Ejecutar en Windows
-
-Abrir una terminal dentro de la carpeta raíz del proyecto y ejecutar:
+### Windows
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-Cuando Spring Boot se encuentre funcionando correctamente, aparecerá un mensaje similar a:
-
-```text
-Started DestinosTuristicosApplication
-```
-
-La API estará disponible en:
+La aplicación se ejecuta por defecto en:
 
 ```text
 http://localhost:8080
 ```
 
+## Base de datos
+
+El proyecto utiliza MySQL.
+
+Base de datos:
+
+```text
+destinos_turisticos
+```
+
+Tablas principales:
+
+```text
+pais
+destino
+```
+
+La configuración de conexión se encuentra en `application.properties`.
+
+Por seguridad, las credenciales de la base de datos no deben publicarse en el repositorio.
+
 ## Pruebas
 
-Los endpoints `GET` pueden probarse directamente desde un navegador web.
+Los endpoints fueron probados utilizando Bruno.
 
-Por ejemplo:
+Se verificaron:
 
-```text
-http://localhost:8080/api/destinos
-```
-
-```text
-http://localhost:8080/api/destinos/1
-```
-
-```text
-http://localhost:8080/api/destinos/buscar?pais=Vietnam
-```
-
-Las operaciones `POST`, `PUT` y `DELETE` pueden probarse utilizando Bruno.
-
-## Persistencia
-
-Para comprobar la persistencia de los datos:
-
-1. Ejecutar la aplicación.
-2. Crear uno o varios destinos mediante `POST`.
-3. Consultar los destinos mediante `GET`.
-4. Detener la aplicación.
-5. Volver a ejecutar Spring Boot.
-6. Consultar nuevamente los destinos.
-
-Los registros creados anteriormente deben permanecer almacenados en la base de datos H2.
+* Operaciones CRUD de destinos.
+* Consulta de destinos por país.
+* Relación entre `Destino` y `Pais`.
+* Persistencia en MySQL.
+* Consumo de la API externa.
+* Manejo de errores de la API externa.
+* Estado de la aplicación mediante Actuator.
+* Métricas de Spring Boot.
+* Métrica personalizada.
+* Exposición de métricas para Prometheus.
 
 ## Autor
 
-Proyecto desarrollado individualmente como actividad académica de la asignatura Lenguajes de Programación 3.
+Proyecto académico desarrollado para la asignatura **Lenguajes de Programación 3**.

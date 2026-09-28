@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface DestinoRepositorio extends JpaRepository<Destino, Long> {
 
-    List<Destino> findByPaisIgnoreCase(String pais);
+    List<Destino> findByPaisNombreIgnoreCase(String nombre);
 
 }

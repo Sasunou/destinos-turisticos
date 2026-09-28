@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Destino {
@@ -13,14 +15,17 @@ public class Destino {
     private Long id;
 
     private String ciudad;
-    private String pais;
     private String descripcion;
     private boolean visitado;
+
+    @ManyToOne
+    @JoinColumn(name = "pais_id")
+    private Pais pais;
 
     public Destino() {
     }
 
-    public Destino(Long id, String ciudad, String pais, String descripcion, boolean visitado) {
+    public Destino(Long id, String ciudad, Pais pais, String descripcion, boolean visitado) {
         this.id = id;
         this.ciudad = ciudad;
         this.pais = pais;
@@ -44,11 +49,11 @@ public class Destino {
         this.ciudad = ciudad;
     }
 
-    public String getPais() {
+    public Pais getPais() {
         return pais;
     }
 
-    public void setPais(String pais) {
+    public void setPais(Pais pais) {
         this.pais = pais;
     }
 

@@ -2,7 +2,7 @@ package api_destinos_turisticos.dto;
 
 public record DestinoSolicitud(
         String ciudad,
-        String pais,
+        Long paisId,
         String descripcion,
         boolean visitado
 ) {
